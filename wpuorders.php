@@ -13,6 +13,8 @@ License URI: http://opensource.org/licenses/MIT
 class wpuOrders
 {
 
+    private $order_statuses = array();
+
     /* ----------------------------------------------------------
     Options
     ---------------------------------------------------------- */
@@ -30,6 +32,15 @@ class wpuOrders
         // Allow translation for plugin name
         $this->options['name'] = $this->__('WPU Orders');
         $this->options['menu_name'] = $this->__('Orders');
+
+        // Set values
+        $this->order_statuses = array(
+            'new' => $this->__('New') ,
+            'processing' => $this->__('Processing') ,
+            'complete' => $this->__('Complete') ,
+            'closed' => $this->__('Closed') ,
+            'cancelled' => $this->__('Cancelled')
+        );
     }
 
     /* ----------------------------------------------------------
@@ -72,6 +83,9 @@ class wpuOrders
         if (isset($_GET['page']) && $_GET['page'] == $this->options['id']) {
             add_action('wp_loaded', array(&$this,
                 'set_admin_page_main_postAction'
+            ));
+            add_action('wp_loaded', array(&$this,
+                'set_admin_page_single_main_postAction'
             ));
             add_action('admin_print_styles', array(&$this,
                 'load_assets_css'
@@ -163,6 +177,17 @@ class wpuOrders
             return false;
         }
 
+        // Check status value
+        if (isset($values['status'])) {
+            if (!array_key_exists($values['status'], $this->order_statuses)) {
+                unset($values['status']);
+            }
+        }
+
+        if (empty($values)) {
+            return false;
+        }
+
         $data_update = array();
         $data_update_format = array();
 
@@ -188,12 +213,46 @@ class wpuOrders
         ));
 
         do_action('wpuorder_post_update_order', $id, $values);
+        return true;
     }
 
     /* Display price */
 
     function return_price($amount, $currency = 'euro') {
         return round($amount / 100, 2) . ' ' . $currency;
+    }
+
+    /* Display status */
+
+    function return_status_name($status) {
+        if (array_key_exists($status, $this->order_statuses)) {
+            $status = $this->order_statuses[$status];
+        }
+        return $status;
+    }
+
+    /* Display select status */
+
+    function return_status_select($status) {
+        if (!array_key_exists($status, $this->order_statuses)) {
+            return $status;
+        }
+
+        // Display only values after current status
+        $hide_value = true;
+        $html = '<select name="status" id="order_status">';
+        foreach ($this->order_statuses as $val => $name) {
+            if ($val == $status) {
+                $hide_value = false;
+            }
+            if (!$hide_value) {
+
+                $html.= '<option value="' . $val . '">' . $name . '</option>';
+            }
+        }
+        $html.= '</select>';
+
+        return $html;
     }
 
     /* ----------------------------------------------------------
@@ -253,6 +312,9 @@ class wpuOrders
                 $order->amount = $this->return_price($order->amount, $order->currency);
                 unset($order->currency);
 
+                // Edit status display
+                $order->status = $this->return_status_name($order->status);
+
                 // Add a column to view order details
                 $order->last_column = '<a href="' . admin_url('admin.php?page=' . $this->options['id'] . '&order_id=' . $order->id) . '" class="button">' . $this->__('View order') . '</a>';
             }
@@ -274,32 +336,64 @@ class wpuOrders
         }
     }
 
-    function content_admin_page_single($order_id) {
-        global $wpdb;
-        $order = $this->get_order_details($order_id);
-        echo '<p><a href="' . admin_url('admin.php?page=' . $this->options['id']) . '">' . $this->__('Back') . '</a></p>';
-        if (is_object($order)) {
-            echo '<p>';
-            // Date
-            $orderdate = strtotime( $order->date );
-            echo '<strong>' . $this->__('Date:') . '</strong> '.date( 'Y/m/d H:i:s', $orderdate ).'<br />';
-            // Amount
-            echo '<strong>' . $this->__('Amount:') . '</strong> '.$this->return_price($order->amount, $order->currency).'<br />';
-            // Method
-            echo '<strong>' . $this->__('Method:') . '</strong> '.$order->method.'<br />';
-            // Status
-            echo '<strong>' . $this->__('Status:') . '</strong> '.$order->status.'<br />';
-            echo '</p>';
-        } else {
-            echo '<p>' . $this->__('This order doesn’t exists') . '</p>';
-        }
-    }
-
     function set_admin_page_main_postAction() {
         if (empty($_POST) || !isset($_POST['action-main-form-' . $this->options['id']]) || !wp_verify_nonce($_POST['action-main-form-' . $this->options['id']], 'action-main-form')) {
             return;
         }
         $this->messages[] = 'Success !';
+    }
+
+    function content_admin_page_single($order_id) {
+        global $wpdb;
+        $order = $this->get_order_details($order_id);
+        echo '<p><a class="button" href="' . admin_url('admin.php?page=' . $this->options['id']) . '">' . $this->__('Back') . '</a></p>';
+        if (is_object($order)) {
+            echo '<form action="" method="post">';
+            echo '<p>';
+
+            // Date
+            $orderdate = strtotime($order->date);
+            echo '<strong>' . $this->__('Date:') . '</strong> ' . date('Y/m/d H:i:s', $orderdate) . '<br />';
+
+            // Amount
+            echo '<strong>' . $this->__('Amount:') . '</strong> ' . $this->return_price($order->amount, $order->currency) . '<br />';
+
+            // Method
+            echo '<strong>' . $this->__('Method:') . '</strong> ' . $order->method . '<br />';
+
+            // Status
+            echo '<strong>' . $this->__('Status:') . '</strong> ' . $this->return_status_select($order->status) . '<br />';
+            echo '</p>';
+            wp_nonce_field('update-order_' . $this->options['id'], 'update-order_' . $this->options['id']);
+            echo '<button type="submit" class="button button-primary">' . $this->__('Update order') . '</button>';
+            echo '</form>';
+        } else {
+            echo '<p>' . $this->__('This order doesn’t exists') . '</p>';
+        }
+    }
+
+    function set_admin_page_single_main_postAction() {
+        if (empty($_POST) || !isset($_POST['update-order_' . $this->options['id']]) || !wp_verify_nonce($_POST['update-order_' . $this->options['id']], 'update-order_' . $this->options['id'])) {
+            return;
+        }
+
+        if (!isset($_GET['order_id']) || !is_numeric($_GET['order_id'])) {
+            return false;
+        }
+
+        $values = array();
+        if (isset($_POST['status'])) {
+            $values['status'] = $_POST['status'];
+        }
+        if (!empty($values)) {
+
+            // Set order status to success
+            $success = $this->update_order($_GET['order_id'], $values);
+            if ($success === true) {
+
+                $this->messages[] = $this->__('The order has been successfully updated.');
+            }
+        }
     }
 
     /* Widget Dashboard */
@@ -318,8 +412,9 @@ class wpuOrders
     ---------------------------------------------------------- */
 
     /* Display notices */
-    private function admin_notices() {
+    function admin_notices() {
         $return = '';
+
         if (!empty($this->messages)) {
             foreach ($this->messages as $message) {
                 $return.= '<div class="updated"><p>' . $message . '</p></div>';
@@ -355,7 +450,7 @@ class wpuOrders
             `user` int(11) unsigned NOT NULL DEFAULT '0',
             `currency` varchar(100) DEFAULT 'euro',
             `method` varchar(100) DEFAULT 'manual',
-            `status` varchar(100) DEFAULT 'ongoing',
+            `status` varchar(100) DEFAULT 'new',
             `controlkey` varchar(100),
             PRIMARY KEY (`id`)
         ) DEFAULT CHARSET=utf8;");

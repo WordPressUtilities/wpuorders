@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WPU Orders\n"
-"POT-Creation-Date: 2014-06-22 23:14+0100\n"
+"POT-Creation-Date: 2014-06-22 23:51+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Kevin <kevin@rocher.me>\n"
 "Language-Team: \n"
@@ -15,49 +15,77 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././wpuorders.php:31
+#: .././wpuorders.php:33
 msgid "WPU Orders"
 msgstr "WPU Commandes"
 
-#: .././wpuorders.php:32
+#: .././wpuorders.php:34
 msgid "Orders"
 msgstr "Commandes"
 
-#: .././wpuorders.php:239
+#: .././wpuorders.php:38
+msgid "New"
+msgstr "Nouvelle"
+
+#: .././wpuorders.php:39
+msgid "Processing"
+msgstr "En cours"
+
+#: .././wpuorders.php:40
+msgid "Complete"
+msgstr "Validée"
+
+#: .././wpuorders.php:41
+msgid "Closed"
+msgstr "Fermée"
+
+#: .././wpuorders.php:42
+msgid "Cancelled"
+msgstr "Annulée"
+
+#: .././wpuorders.php:298
 msgid "No results yet"
 msgstr "Aucun résultat pour le moment."
 
-#: .././wpuorders.php:249
+#: .././wpuorders.php:308
 msgid "Guest"
 msgstr "Invité"
 
-#: .././wpuorders.php:257
+#: .././wpuorders.php:319
 msgid "View order"
 msgstr "Voir la commande"
 
-#: .././wpuorders.php:280
+#: .././wpuorders.php:349
 msgid "Back"
 msgstr "Retour"
 
-#: .././wpuorders.php:285
+#: .././wpuorders.php:356
 msgid "Date:"
 msgstr "Date :"
 
-#: .././wpuorders.php:287
+#: .././wpuorders.php:359
 msgid "Amount:"
 msgstr "Montant :"
 
-#: .././wpuorders.php:289
+#: .././wpuorders.php:362
 msgid "Method:"
 msgstr "Méthode :"
 
-#: .././wpuorders.php:291
+#: .././wpuorders.php:365
 msgid "Status:"
 msgstr "Etat :"
 
-#: .././wpuorders.php:294
+#: .././wpuorders.php:368
+msgid "Update order"
+msgstr "Mettre à jour la commande"
+
+#: .././wpuorders.php:371
 msgid "This order doesn’t exists"
 msgstr "Cette commande n'existe pas."
+
+#: .././wpuorders.php:393
+msgid "The order has been successfully updated."
+msgstr "La commande a été mise à jour avec succès."
 
 #~ msgid "Anonymous"
 #~ msgstr "Invité"

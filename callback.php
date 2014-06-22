@@ -26,5 +26,5 @@ if (!is_object($order)) {
 
 // Set order status to success
 $wpu_o->update_order($order->id, array(
-    'status' => 'success'
+    'status' => 'complete'
 ));
