@@ -1,34 +1,81 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
-"POT-Creation-Date: 2013-11-13 23:59+0100\n"
+"Project-Id-Version: WPU Orders\n"
+"POT-Creation-Date: 2014-06-22 23:14+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Kevin <kevin@rocher.me>\n"
 "Language-Team: \n"
+"Language: fr_FR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.7\n"
+"X-Generator: Poedit 1.6.5\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-KeywordsList: __;_e\n"
 "X-Poedit-SearchPath-0: ../.\n"
 
-#: .././wpubaseplugin.php:29
-msgid "Base Plugin"
-msgstr "Plugin de base"
+#: .././wpuorders.php:31
+msgid "WPU Orders"
+msgstr "WPU Commandes"
 
-#: .././wpubaseplugin.php:30
-msgid "Base"
-msgstr "Base"
+#: .././wpuorders.php:32
+msgid "Orders"
+msgstr "Commandes"
 
-#: .././wpubaseplugin.php:95
-msgid "Content"
-msgstr "Contenu"
+#: .././wpuorders.php:239
+msgid "No results yet"
+msgstr "Aucun résultat pour le moment."
 
-#: .././wpubaseplugin.php:100
-msgid "Submit"
-msgstr "Envoyer"
+#: .././wpuorders.php:249
+msgid "Guest"
+msgstr "Invité"
+
+#: .././wpuorders.php:257
+msgid "View order"
+msgstr "Voir la commande"
+
+#: .././wpuorders.php:280
+msgid "Back"
+msgstr "Retour"
+
+#: .././wpuorders.php:285
+msgid "Date:"
+msgstr "Date :"
+
+#: .././wpuorders.php:287
+msgid "Amount:"
+msgstr "Montant :"
+
+#: .././wpuorders.php:289
+msgid "Method:"
+msgstr "Méthode :"
+
+#: .././wpuorders.php:291
+msgid "Status:"
+msgstr "Etat :"
+
+#: .././wpuorders.php:294
+msgid "This order doesn’t exists"
+msgstr "Cette commande n'existe pas."
+
+#~ msgid "Anonymous"
+#~ msgstr "Invité"
+
+#~ msgid "Order date:"
+#~ msgstr "Date de la commande :"
+
+#~ msgid "Base Plugin"
+#~ msgstr "Plugin de base"
+
+#~ msgid "Base"
+#~ msgstr "Base"
+
+#~ msgid "Content"
+#~ msgstr "Contenu"
+
+#~ msgid "Submit"
+#~ msgstr "Envoyer"
 
 #~ msgid "Error: Your version of %s is outdated!"
 #~ msgstr "Erreur : Votre version de %s n'est pas à jour !"

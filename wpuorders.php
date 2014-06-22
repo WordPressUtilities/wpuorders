@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.1
+Version: 0.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -186,6 +186,14 @@ class wpuOrders
         ) , $data_update_format, array(
             '%d'
         ));
+
+        do_action('wpuorder_post_update_order', $id, $values);
+    }
+
+    /* Display price */
+
+    function return_price($amount, $currency = 'euro') {
+        return round($amount / 100, 2) . ' ' . $currency;
     }
 
     /* ----------------------------------------------------------
@@ -238,11 +246,11 @@ class wpuOrders
                 if ($order_user != false) {
                     $order->user = '<a href="' . admin_url('user-edit.php?user_id=' . $user_id) . '">' . $order_user->data->user_nicename . '</a>';
                 } else {
-                    $order->user = $this->__('Anonymous');
+                    $order->user = $this->__('Guest');
                 }
 
                 // Edit price display
-                $order->amount = round($order->amount, 2) . ' ' . $order->currency;
+                $order->amount = $this->return_price($order->amount, $order->currency);
                 unset($order->currency);
 
                 // Add a column to view order details
@@ -271,9 +279,17 @@ class wpuOrders
         $order = $this->get_order_details($order_id);
         echo '<p><a href="' . admin_url('admin.php?page=' . $this->options['id']) . '">' . $this->__('Back') . '</a></p>';
         if (is_object($order)) {
-            echo '<pre>';
-            var_dump($order);
-            echo '</pre>';
+            echo '<p>';
+            // Date
+            $orderdate = strtotime( $order->date );
+            echo '<strong>' . $this->__('Date:') . '</strong> '.date( 'Y/m/d H:i:s', $orderdate ).'<br />';
+            // Amount
+            echo '<strong>' . $this->__('Amount:') . '</strong> '.$this->return_price($order->amount, $order->currency).'<br />';
+            // Method
+            echo '<strong>' . $this->__('Method:') . '</strong> '.$order->method.'<br />';
+            // Status
+            echo '<strong>' . $this->__('Status:') . '</strong> '.$order->status.'<br />';
+            echo '</p>';
         } else {
             echo '<p>' . $this->__('This order doesn’t exists') . '</p>';
         }
