@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.2
+Version: 0.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -41,6 +41,24 @@ class wpuOrders
             'closed' => $this->__('Closed') ,
             'cancelled' => $this->__('Cancelled')
         );
+
+        // Get order methods
+        $default_order_methods = array(
+            'manual' => array(
+                'name' => $this->__('Manual order')
+            ) ,
+            'bankcheck' => array(
+                'name' => $this->__('Bank check')
+            ) ,
+            'banktransfer' => array(
+                'name' => $this->__('Bank transfer')
+            )
+        );
+        $new_order_methods = apply_filters('wpuorder_order_methods', $default_order_methods);
+        $this->order_methods = array();
+        if (is_array($new_order_methods)) {
+            $this->order_methods = $new_order_methods;
+        }
     }
 
     /* ----------------------------------------------------------
@@ -119,6 +137,11 @@ class wpuOrders
             return false;
         }
 
+        // Check order name
+        if (!isset($details['name'])) {
+            $details['name'] = 'Order';
+        }
+
         // Check user id
         if (!isset($details['user'])) {
             $details['user'] = 0;
@@ -139,10 +162,12 @@ class wpuOrders
         $wpdb->insert($this->data_table, array(
             'user' => $details['user'],
             'amount' => $details['amount'],
+            'name' => $details['name'],
             'controlkey' => $details['controlkey'],
         ) , array(
             '%d',
             '%d',
+            '%s',
             '%s'
         ));
         $insert_id = $wpdb->insert_id;
@@ -231,6 +256,26 @@ class wpuOrders
         return $status;
     }
 
+    /* Display date */
+
+    function return_order_date($order_date) {
+        $order_date_php = strtotime($order_date);
+        return date($this->__('Y/m/d H:i:s') , $order_date_php);
+    }
+
+    /* Display user */
+
+    function return_user_name($user_id) {
+        $html = '';
+        $order_user = get_user_by('id', $user_id);
+        if ($order_user != false) {
+            $html = '<a href="' . admin_url('user-edit.php?user_id=' . $user_id) . '">' . $order_user->data->user_nicename . '</a>';
+        } else {
+            $html = $this->__('Guest');
+        }
+        return $html;
+    }
+
     /* Display select status */
 
     function return_status_select($status) {
@@ -292,7 +337,7 @@ class wpuOrders
         global $wpdb;
 
         $pager = $this->get_pager_limit(20, $this->data_table);
-        $list = $wpdb->get_results("SELECT id, date, user, amount, currency, method, status FROM " . $this->data_table . " " . $pager['limit']);
+        $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status FROM " . $this->data_table . " " . $pager['limit']);
 
         if (empty($list)) {
             echo '<p>' . __('No results yet', $this->options['id']) . '</p>';
@@ -300,13 +345,10 @@ class wpuOrders
             foreach ($list as $order) {
 
                 // Edit user id display
-                $user_id = $order->user;
-                $order_user = get_user_by('id', $user_id);
-                if ($order_user != false) {
-                    $order->user = '<a href="' . admin_url('user-edit.php?user_id=' . $user_id) . '">' . $order_user->data->user_nicename . '</a>';
-                } else {
-                    $order->user = $this->__('Guest');
-                }
+                $order->user = $this->return_user_name($order->user);
+
+                // Edit date display
+                $order->date = $this->return_order_date($order->date);
 
                 // Edit price display
                 $order->amount = $this->return_price($order->amount, $order->currency);
@@ -322,12 +364,13 @@ class wpuOrders
             // Display order list
             echo $this->get_admin_table($list, array(
                 'columns' => array(
-                    'ID',
-                    'Date',
-                    'User',
-                    'Amount',
-                    'Method',
-                    'Status',
+                    $this->__('ID') ,
+                    $this->__('Date') ,
+                    $this->__('Name') ,
+                    $this->__('User') ,
+                    $this->__('Amount') ,
+                    $this->__('Method') ,
+                    $this->__('Status') ,
                     ''
                 ) ,
                 'pagenum' => $pager['pagenum'],
@@ -349,21 +392,40 @@ class wpuOrders
         echo '<p><a class="button" href="' . admin_url('admin.php?page=' . $this->options['id']) . '">' . $this->__('Back') . '</a></p>';
         if (is_object($order)) {
             echo '<form action="" method="post">';
-            echo '<p>';
+            echo '<table style="max-width: 500px;">
+    <tbody>
+        <tr>
+            <td>
+                <strong>' . $this->__('Order name:') . '</strong> ' . $order->name . '
+            </td>
+            <td>
+                <strong>' . $this->__('Date:') . '</strong> ' . $this->return_order_date($order->date) . '
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <strong>' . $this->__('Amount:') . '</strong> ' . $this->return_price($order->amount, $order->currency) . '
+            </td>
+            <td>
+                <strong>' . $this->__('Method:') . '</strong> ' . $order->method . '
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <strong>' . $this->__('User:') . '</strong> ' . $this->return_user_name($order->user) . '
+            </td>
+            <td>
+                <strong>' . $this->__('Status:') . '</strong> ' . $this->return_status_select($order->status) . '
+            </td>
+        </tr>
+    </tbody>
+</table>';
 
-            // Date
-            $orderdate = strtotime($order->date);
-            echo '<strong>' . $this->__('Date:') . '</strong> ' . date('Y/m/d H:i:s', $orderdate) . '<br />';
+            // details
+            if (!empty($order->details)) {
+                echo '<div><strong>' . $this->__('Details:') . '</strong> <pre style="overflow: auto;max-width:500px;padding:10px;font-size: 12px;background-color: #FFFFFF;">' . $order->details . '</pre>';
+            }
 
-            // Amount
-            echo '<strong>' . $this->__('Amount:') . '</strong> ' . $this->return_price($order->amount, $order->currency) . '<br />';
-
-            // Method
-            echo '<strong>' . $this->__('Method:') . '</strong> ' . $order->method . '<br />';
-
-            // Status
-            echo '<strong>' . $this->__('Status:') . '</strong> ' . $this->return_status_select($order->status) . '<br />';
-            echo '</p>';
             wp_nonce_field('update-order_' . $this->options['id'], 'update-order_' . $this->options['id']);
             echo '<button type="submit" class="button button-primary">' . $this->__('Update order') . '</button>';
             echo '</form>';
@@ -447,11 +509,13 @@ class wpuOrders
         dbDelta("CREATE TABLE " . $this->data_table . " (
             `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
             `date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            `name` varchar(100) DEFAULT 'order',
             `user` int(11) unsigned NOT NULL DEFAULT '0',
             `currency` varchar(100) DEFAULT 'euro',
             `method` varchar(100) DEFAULT 'manual',
             `status` varchar(100) DEFAULT 'new',
             `controlkey` varchar(100),
+            `details` TEXT varchar(100),
             PRIMARY KEY (`id`)
         ) DEFAULT CHARSET=utf8;");
     }
