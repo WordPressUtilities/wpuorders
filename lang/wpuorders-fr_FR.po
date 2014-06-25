@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: WPU Orders\n"
-"POT-Creation-Date: 2014-06-23 16:13+0100\n"
+"POT-Creation-Date: 2014-06-25 23:17+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Kevin <kevin@rocher.me>\n"
 "Language-Team: \n"
@@ -43,105 +43,109 @@ msgstr "Fermée"
 msgid "Cancelled"
 msgstr "Annulée"
 
-#: .././wpuorders.php:48
+#: .././wpuorders.php:62
 msgid "Manual order"
 msgstr "Commande manuelle"
 
-#: .././wpuorders.php:51
+#: .././wpuorders.php:65
 msgid "Bank check"
 msgstr "Chèque bancaire"
 
-#: .././wpuorders.php:54
+#: .././wpuorders.php:68
 msgid "Bank transfer"
 msgstr "Virement bancaire"
 
-#: .././wpuorders.php:263
+#: .././wpuorders.php:293
 msgid "Y/m/d H:i:s"
 msgstr "d/m/Y - H:i:s"
 
-#: .././wpuorders.php:274
+#: .././wpuorders.php:304
 msgid "Guest"
 msgstr "Invité"
 
-#: .././wpuorders.php:343
+#: .././wpuorders.php:385
 msgid "No results yet"
 msgstr "Aucun résultat pour le moment."
 
-#: .././wpuorders.php:361
+#: .././wpuorders.php:403
 msgid "View order"
 msgstr "Voir la commande"
 
-#: .././wpuorders.php:367
+#: .././wpuorders.php:409
 msgid "ID"
 msgstr "ID"
 
-#: .././wpuorders.php:368
+#: .././wpuorders.php:410
 msgid "Date"
 msgstr "Date"
 
-#: .././wpuorders.php:369
+#: .././wpuorders.php:411
 msgid "Name"
 msgstr "Nom"
 
-#: .././wpuorders.php:370
+#: .././wpuorders.php:412
 msgid "User"
 msgstr "Utilisateur"
 
-#: .././wpuorders.php:371
+#: .././wpuorders.php:413
 msgid "Amount"
 msgstr "Montant"
 
-#: .././wpuorders.php:372
+#: .././wpuorders.php:414
 msgid "Method"
 msgstr "Méthode"
 
-#: .././wpuorders.php:373
+#: .././wpuorders.php:415
 msgid "Status"
 msgstr "Etat"
 
-#: .././wpuorders.php:392
+#: .././wpuorders.php:434
 msgid "Back"
 msgstr "Retour"
 
-#: .././wpuorders.php:399
+#: .././wpuorders.php:441
 msgid "Order name:"
 msgstr "Nom de la commande :"
 
-#: .././wpuorders.php:402
+#: .././wpuorders.php:444
 msgid "Date:"
 msgstr "Date :"
 
-#: .././wpuorders.php:407
+#: .././wpuorders.php:449
 msgid "Amount:"
 msgstr "Montant :"
 
-#: .././wpuorders.php:410
+#: .././wpuorders.php:452
 msgid "Method:"
 msgstr "Méthode :"
 
-#: .././wpuorders.php:415
+#: .././wpuorders.php:457
 msgid "User:"
 msgstr "Utilisateur :"
 
-#: .././wpuorders.php:418
+#: .././wpuorders.php:460
 msgid "Status:"
 msgstr "Etat :"
 
-#: .././wpuorders.php:426
+#: .././wpuorders.php:468
 msgid "Details:"
 msgstr "Détails :"
 
-#: .././wpuorders.php:430
+#: .././wpuorders.php:472
 msgid "Update order"
 msgstr "Mettre à jour la commande"
 
-#: .././wpuorders.php:433
+#: .././wpuorders.php:475
 msgid "This order doesn’t exists"
 msgstr "Cette commande n'existe pas."
 
-#: .././wpuorders.php:456
+#: .././wpuorders.php:498
 msgid "The order has been successfully updated."
 msgstr "La commande a été mise à jour avec succès."
+
+#: .././wpuorders.php:526
+msgid "See all orders"
+msgstr "Voir toutes les commandes"
 
 #~ msgid "Anonymous"
 #~ msgstr "Invité"

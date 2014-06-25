@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.4
+Version: 0.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -40,6 +40,20 @@ class wpuOrders
             'complete' => $this->__('Complete') ,
             'closed' => $this->__('Closed') ,
             'cancelled' => $this->__('Cancelled')
+        );
+        $this->currencies = array(
+            'euro' => array(
+                'symbol' => '&euro;',
+                'name' => 'euro'
+            ) ,
+            'dollar' => array(
+                'symbol' => '$',
+                'name' => 'dollar'
+            ) ,
+            'pound' => array(
+                'symbol' => '&pound;',
+                'name' => 'pound'
+            ) ,
         );
 
         // Get order methods
@@ -241,13 +255,29 @@ class wpuOrders
         return true;
     }
 
-    /* Display price */
+    /* Return currency */
 
-    function return_price($amount, $currency = 'euro') {
-        return round($amount / 100, 2) . ' ' . $currency;
+    function return_currency($currency, $info = 'symbol') {
+        if (!array_key_exists($currency, $this->currencies)) {
+            $currency = 'euro';
+        }
+        if (!in_array($info, array(
+            'symbol',
+            'name'
+        ))) {
+            $info = 'symbol';
+        }
+
+        return $this->currencies[$currency][$info];
     }
 
-    /* Display status */
+    /* Return price */
+
+    function return_price($amount, $currency = 'euro') {
+        return round($amount / 100, 2) . ' ' . $this->return_currency($currency);
+    }
+
+    /* Return status */
 
     function return_status_name($status) {
         if (array_key_exists($status, $this->order_statuses)) {
@@ -256,14 +286,14 @@ class wpuOrders
         return $status;
     }
 
-    /* Display date */
+    /* Return date */
 
     function return_order_date($order_date) {
         $order_date_php = strtotime($order_date);
         return date($this->__('Y/m/d H:i:s') , $order_date_php);
     }
 
-    /* Display user */
+    /* Return user */
 
     function return_user_name($user_id) {
         $html = '';
@@ -276,7 +306,7 @@ class wpuOrders
         return $html;
     }
 
-    /* Display select status */
+    /* Return select status */
 
     function return_status_select($status) {
         if (!array_key_exists($status, $this->order_statuses)) {
@@ -300,6 +330,18 @@ class wpuOrders
         return $html;
     }
 
+    /* Return order url */
+
+    function return_order_url($order_id) {
+        return admin_url('admin.php?page=' . $this->options['id'] . '&order_id=' . $order_id);
+    }
+
+    /* Return orders url */
+
+    function return_orders_url() {
+        return admin_url('admin.php?page=' . $this->options['id']);
+    }
+
     /* ----------------------------------------------------------
     Admin
     ---------------------------------------------------------- */
@@ -314,7 +356,7 @@ class wpuOrders
         $admin_bar->add_menu(array(
             'id' => $this->options['id'],
             'title' => $this->options['menu_name'],
-            'href' => admin_url('admin.php?page=' . $this->options['id']) ,
+            'href' => $this->return_orders_url() ,
             'meta' => array(
                 'title' => $this->options['menu_name'],
             ) ,
@@ -358,7 +400,7 @@ class wpuOrders
                 $order->status = $this->return_status_name($order->status);
 
                 // Add a column to view order details
-                $order->last_column = '<a href="' . admin_url('admin.php?page=' . $this->options['id'] . '&order_id=' . $order->id) . '" class="button">' . $this->__('View order') . '</a>';
+                $order->last_column = '<a href="' . $this->return_order_url($order->id) . '" class="button">' . $this->__('View order') . '</a>';
             }
 
             // Display order list
@@ -389,7 +431,7 @@ class wpuOrders
     function content_admin_page_single($order_id) {
         global $wpdb;
         $order = $this->get_order_details($order_id);
-        echo '<p><a class="button" href="' . admin_url('admin.php?page=' . $this->options['id']) . '">' . $this->__('Back') . '</a></p>';
+        echo '<p><a class="button" href="' . $this->return_orders_url() . '">' . $this->__('Back') . '</a></p>';
         if (is_object($order)) {
             echo '<form action="" method="post">';
             echo '<table style="max-width: 500px;">
@@ -460,13 +502,28 @@ class wpuOrders
 
     /* Widget Dashboard */
     function add_dashboard_widget() {
-        wp_add_dashboard_widget($this->options['id'] . '_dashboard_widget', $this->options['name'], array(&$this,
+        wp_add_dashboard_widget($this->options['id'] . '_dashboard_widget', $this->options['menu_name'], array(&$this,
             'content_dashboard_widget'
         ));
     }
 
     function content_dashboard_widget() {
-        echo '<p>Hello World !</p>';
+        global $wpdb;
+        $list = $wpdb->get_results("SELECT id, date, name, amount, currency FROM " . $this->data_table . " LIMIT 0, 5");
+        if (!empty($list)) {
+            echo '<ul>';
+            foreach ($list as $order) {
+                echo '<li>';
+                echo '<a href="' . $this->return_order_url($order->id) . '">' . $this->return_order_date($order->date) . '</a>';
+                echo ' - ';
+                echo $order->name;
+                echo ' - ';
+                echo $this->return_price($order->amount, $order->currency);
+                echo '</li>';
+            }
+            echo '</ul>';
+        }
+        echo '<p><a href="' . $this->return_orders_url() . '" class="button">' . $this->__('See all orders') . '</a></p>';
     }
 
     /* ----------------------------------------------------------
