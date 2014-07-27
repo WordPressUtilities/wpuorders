@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.5
+Version: 0.6
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -59,19 +59,39 @@ class wpuOrders
         // Get order methods
         $default_order_methods = array(
             'manual' => array(
-                'name' => $this->__('Manual order')
+                'name' => $this->__('Manual order') ,
+                'active' => 0
             ) ,
             'bankcheck' => array(
-                'name' => $this->__('Bank check')
+                'name' => $this->__('Bank check') ,
+                'active' => 1
             ) ,
             'banktransfer' => array(
-                'name' => $this->__('Bank transfer')
+                'name' => $this->__('Bank transfer') ,
+                'active' => 1
             )
         );
         $new_order_methods = apply_filters('wpuorder_order_methods', $default_order_methods);
         $this->order_methods = array();
         if (is_array($new_order_methods)) {
             $this->order_methods = $new_order_methods;
+        }
+
+        // Set templates
+        foreach ($this->order_methods as $k => $method) {
+
+            // Check for existing template
+            if (!isset($method['template_front_name'])) {
+                $method['template_front_name'] = dirname(__FILE__) . '/payment/views/' . $k . '.php';
+            }
+            if (!isset($method['template_front_content'])) {
+                $this->order_methods[$k]['template_front_content'] = '';
+            }
+            if (file_exists($method['template_front_name'])) {
+                ob_start();
+                include $method['template_front_name'];
+                $this->order_methods[$k]['template_front_content'] = ob_get_clean();
+            }
         }
     }
 
@@ -166,6 +186,11 @@ class wpuOrders
         if (!is_numeric($details['user'])) {
             trigger_error("The user is invalid");
             return false;
+        }
+
+        // Method
+        if (!isset($details['method']) || !array_key_exists($details['method'], $this->order_methods)) {
+            $details['method'] = 'manual';
         }
 
         $details['controlkey'] = sha1(microtime() . $details['amount'] . $details['user']);
@@ -340,6 +365,24 @@ class wpuOrders
 
     function return_orders_url() {
         return admin_url('admin.php?page=' . $this->options['id']);
+    }
+
+    /* Get payment methods HTML */
+
+    function return_payment_html() {
+        $order_methods = apply_filters('wpuorder_order_methods_beforedisplay', $this->order_methods);
+
+        $return_html = '<ul>';
+        foreach ($order_methods as $k => $method) {
+            if ($method['active']) {
+                $return_html.= '<li class="payment-' . $k . '">';
+                $return_html.= '<label><input type="radio" name="payment_method" value="' . $k . '"> ' . $method['name'] . '</label>';
+                $return_html.= '<div class="details">' . $method['template_front_content'] . '</div>';
+                $return_html.= '</li>';
+            }
+        }
+        $return_html.= '</ul>';
+        return $return_html;
     }
 
     /* ----------------------------------------------------------
