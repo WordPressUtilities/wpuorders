@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.6
+Version: 0.6.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -194,7 +194,6 @@ class wpuOrders
         }
 
         $details['controlkey'] = sha1(microtime() . $details['amount'] . $details['user']);
-
         // Request
         global $wpdb;
         $wpdb->flush();
@@ -611,11 +610,12 @@ class wpuOrders
             `date` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `name` varchar(100) DEFAULT 'order',
             `user` int(11) unsigned NOT NULL DEFAULT '0',
+            `amount` int(11) unsigned NOT NULL DEFAULT '0',
             `currency` varchar(100) DEFAULT 'euro',
             `method` varchar(100) DEFAULT 'manual',
             `status` varchar(100) DEFAULT 'new',
             `controlkey` varchar(100),
-            `details` TEXT varchar(100),
+            `details` TEXT,
             PRIMARY KEY (`id`)
         ) DEFAULT CHARSET=utf8;");
     }
