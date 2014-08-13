@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.6.2
+Version: 0.6.3
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -176,6 +176,11 @@ class wpuOrders
             $details['name'] = 'Order';
         }
 
+        // Check order details
+        if (!isset($details['details'])) {
+            $details['details'] = '';
+        }
+
         // Check user id
         if (!isset($details['user'])) {
             $details['user'] = 0;
@@ -204,9 +209,11 @@ class wpuOrders
             'name' => $details['name'],
             'method' => $details['method'],
             'controlkey' => $details['controlkey'],
+            'details' => $details['details'],
         ) , array(
             '%d',
             '%d',
+            '%s',
             '%s',
             '%s',
             '%s'
