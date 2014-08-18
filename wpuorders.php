@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.6.3
+Version: 0.6.4
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -149,6 +149,21 @@ class wpuOrders
                 'admin_notices'
             ));
         }
+    }
+
+    /* ----------------------------------------------------------
+      Getters
+    ---------------------------------------------------------- */
+
+    public function getOrderMethod($id) {
+        $method = array(
+            'name' => $this->__('Manual order') ,
+            'active' => 0
+        );
+        if (array_key_exists($id, $this->order_methods)) {
+            $method = $this->order_methods[$id];
+        }
+        return $method;
     }
 
     /* ----------------------------------------------------------
@@ -432,7 +447,7 @@ class wpuOrders
         global $wpdb;
 
         $pager = $this->get_pager_limit(20, $this->data_table);
-        $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status FROM " . $this->data_table . " " . $pager['limit']);
+        $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status FROM " . $this->data_table . " ORDER by id DESC " . $pager['limit']);
 
         if (empty($list)) {
             echo '<p>' . __('No results yet', $this->options['id']) . '</p>';
@@ -484,8 +499,9 @@ class wpuOrders
     function content_admin_page_single($order_id) {
         global $wpdb;
         $order = $this->get_order_details($order_id);
-        echo '<p><a class="button" href="' . $this->return_orders_url() . '">' . $this->__('Back') . '</a></p>';
+        $back_button = '<a class="button" href="' . $this->return_orders_url() . '">' . $this->__('Back') . '</a>';
         if (is_object($order)) {
+            $method = $this->getOrderMethod($order->method);
             echo '<form action="" method="post">';
             echo '<table style="max-width: 500px;">
     <tbody>
@@ -502,7 +518,7 @@ class wpuOrders
                 <strong>' . $this->__('Amount:') . '</strong> ' . $this->return_price($order->amount, $order->currency) . '
             </td>
             <td>
-                <strong>' . $this->__('Method:') . '</strong> ' . $order->method . '
+                <strong>' . $this->__('Method:') . '</strong> ' . $method['name'] . '
             </td>
         </tr>
         <tr>
@@ -522,10 +538,11 @@ class wpuOrders
             }
 
             wp_nonce_field('update-order_' . $this->options['id'], 'update-order_' . $this->options['id']);
-            echo '<button type="submit" class="button button-primary">' . $this->__('Update order') . '</button>';
+            echo $back_button . ' <button type="submit" class="button button-primary">' . $this->__('Update order') . '</button>';
             echo '</form>';
         } else {
             echo '<p>' . $this->__('This order doesn’t exists') . '</p>';
+            echo '<p>' . $back_button . '</p>';
         }
     }
 
