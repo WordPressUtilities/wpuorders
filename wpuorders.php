@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.6.4
+Version: 0.7
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -388,8 +388,14 @@ class wpuOrders
 
     /* Return orders url */
 
-    function return_orders_url() {
-        return admin_url('admin.php?page=' . $this->options['id']);
+    function return_orders_url($arguments = array()) {
+        $url = 'admin.php?page=' . $this->options['id'];
+        if (is_array($arguments)) {
+            foreach ($arguments as $key => $var) {
+                $url.= '&' . $key . '=' . urlencode($var);
+            }
+        }
+        return admin_url($url);
     }
 
     /* Get payment methods HTML */
@@ -443,11 +449,90 @@ class wpuOrders
         echo $this->get_wrapper_end();
     }
 
+    function get_filters_page($filters) {
+        $current_filters = array();
+        $sql_filter_where = '';
+
+        // Add filter if necessary
+        foreach ($filters as $f_key => $f_values) {
+            $values = array_keys($f_values);
+            $filter_id = 'filter_' . $f_key;
+            if (isset($_GET[$filter_id]) && in_array($_GET[$filter_id], $values)) {
+                $sql_filter_where.= " AND " . $f_key . "='" . $_GET[$filter_id] . "'";
+                $current_filters[$f_key] = $_GET[$filter_id];
+            }
+        }
+
+        return array(
+            'current' => $current_filters,
+            'sql' => $sql_filter_where
+        );
+    }
+
+    function get_filters_html($filters, $current_filters) {
+
+        $html = '';
+        $html_current = 'style="font-weight:bold;"';
+
+        // Display filters list
+        foreach ($filters as $f_key => $f_values) {
+            if (!empty($f_values)) {
+                $filter_id = 'filter_' . $f_key;
+
+                // Extract current filters
+                $f_current_filters = $current_filters;
+                if (isset($f_current_filters[$f_key])) {
+                    unset($f_current_filters[$f_key]);
+                }
+
+                // Display filters values
+                $html.= '<p>';
+                $html.= '<a ' . (!isset($current_filters[$f_key]) ? $html_current : '') . ' href="' . $this->return_orders_url($f_current_filters) . '">' . __('All statuses') . '</a>';
+                foreach ($f_values as $key => $var) {
+
+                    // Make a copy of current filters to allow multiple filters to be passed in URL
+                    $this_current_filters = $f_current_filters;
+
+                    // Add current key
+                    $this_current_filters[$f_key] = $key;
+
+                    // Prefix all keys
+                    $loaded_filters = array();
+                    foreach ($this_current_filters as $tmp_key => $tmp_value) {
+                        $loaded_filters['filter_' . $tmp_key] = $tmp_value;
+                    }
+
+                    $html.= ' | <a ' . ((isset($current_filters[$f_key]) && $current_filters[$f_key] == $key) ? $html_current : '') . ' href="' . $this->return_orders_url($loaded_filters) . '">' . $var . '</a>';
+                }
+                $html.= '</p>';
+            }
+        }
+
+        return $html;
+    }
+
     function content_admin_page_main() {
         global $wpdb;
 
-        $pager = $this->get_pager_limit(20, $this->data_table);
-        $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status FROM " . $this->data_table . " ORDER by id DESC " . $pager['limit']);
+        $enabled_filters = array(
+            'status' => $this->order_statuses
+        );
+        // Enable method filter
+        $enabled_filters['method'] = array();
+        foreach ($this->order_methods as $k => $method) {
+            $enabled_filters['method'][$k] = $method['name'];
+        }
+
+        $filters = $this->get_filters_page($enabled_filters);
+
+        $req_details = "WHERE 1=1 " . $filters['sql'] . " ORDER by id DESC";
+        $pager = $this->get_pager_limit(20, $this->data_table, $req_details);
+
+        // Get all status keys
+        $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status
+            FROM " . $this->data_table . " " . $req_details . " " . $pager['limit']);
+
+        echo $this->get_filters_html($enabled_filters, $filters['current']);
 
         if (empty($list)) {
             echo '<p>' . __('No results yet', $this->options['id']) . '</p>';
@@ -660,7 +745,7 @@ class wpuOrders
     Utilities : Requests
     ---------------------------------------------------------- */
 
-    private function get_pager_limit($perpage, $tablename = '') {
+    private function get_pager_limit($perpage, $tablename = '', $req_details = '') {
         global $wpdb;
 
         // Ensure good format for table name
@@ -678,7 +763,7 @@ class wpuOrders
         }
 
         // Get number of elements in table
-        $elements_count = $wpdb->get_var("SELECT COUNT(*) FROM " . $tablename);
+        $elements_count = $wpdb->get_var("SELECT COUNT(*) FROM " . $tablename . " " . $req_details);
 
         // Get max page number
         $max_pages = ceil($elements_count / $perpage);
