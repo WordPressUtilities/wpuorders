@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.7
+Version: 0.8
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -93,6 +93,19 @@ class wpuOrders
                 $this->order_methods[$k]['template_front_content'] = ob_get_clean();
             }
         }
+
+        $this->sortby_fields = array(
+            'id',
+            'date',
+            'user',
+            'amount'
+        );
+        $this->sortby_field = 'id';
+        $this->sortby_dirs = array(
+            'ASC',
+            'DESC'
+        );
+        $this->sortby_dir = 'DESC';
     }
 
     /* ----------------------------------------------------------
@@ -474,6 +487,11 @@ class wpuOrders
         $html = '';
         $html_current = 'style="font-weight:bold;"';
 
+        $extra_args = array(
+            'sortby_dir' => $this->sortby_dir,
+            'sortby_field' => $this->sortby_field
+        );
+
         // Display filters list
         foreach ($filters as $f_key => $f_values) {
             if (!empty($f_values)) {
@@ -485,22 +503,21 @@ class wpuOrders
                     unset($f_current_filters[$f_key]);
                 }
 
+                // Prefix all keys
+                $loaded_filters = array();
+                foreach ($f_current_filters as $tmp_key => $tmp_value) {
+                    $loaded_filters['filter_' . $tmp_key] = $tmp_value;
+                }
+
+                $loaded_filters = array_merge($loaded_filters, $extra_args);
+
                 // Display filters values
                 $html.= '<p>';
-                $html.= '<a ' . (!isset($current_filters[$f_key]) ? $html_current : '') . ' href="' . $this->return_orders_url($f_current_filters) . '">' . __('All statuses') . '</a>';
+                $html.= '<a ' . (!isset($current_filters[$f_key]) ? $html_current : '') . ' href="' . $this->return_orders_url($loaded_filters) . '">' . __('All statuses') . '</a>';
                 foreach ($f_values as $key => $var) {
 
-                    // Make a copy of current filters to allow multiple filters to be passed in URL
-                    $this_current_filters = $f_current_filters;
-
-                    // Add current key
-                    $this_current_filters[$f_key] = $key;
-
-                    // Prefix all keys
-                    $loaded_filters = array();
-                    foreach ($this_current_filters as $tmp_key => $tmp_value) {
-                        $loaded_filters['filter_' . $tmp_key] = $tmp_value;
-                    }
+                    // Set current key
+                    $loaded_filters['filter_' . $f_key] = $key;
 
                     $html.= ' | <a ' . ((isset($current_filters[$f_key]) && $current_filters[$f_key] == $key) ? $html_current : '') . ' href="' . $this->return_orders_url($loaded_filters) . '">' . $var . '</a>';
                 }
@@ -511,27 +528,79 @@ class wpuOrders
         return $html;
     }
 
+    function get_columns_list_html($current_filters) {
+        $columns = array(
+            'id' => $this->__('ID') ,
+            'date' => $this->__('Date') ,
+            'name' => $this->__('Name') ,
+            'user' => $this->__('User') ,
+            'amount' => $this->__('Amount') ,
+            'method' => $this->__('Method') ,
+            'status' => $this->__('Status') ,
+            'empty' => ''
+        );
+
+        $enabled_filters = array();
+        foreach ($current_filters as $key => $var) {
+            $enabled_filters['filter_' . $key] = $var;
+        }
+
+        foreach ($columns as $key => & $content) {
+            if (in_array($key, $this->sortby_fields)) {
+
+                $args_asc = array_merge(array(
+                    'sortby_dir' => 'ASC',
+                    'sortby_field' => $key,
+                ) , $enabled_filters);
+
+                $args_desc = array_merge(array(
+                    'sortby_dir' => 'DESC',
+                    'sortby_field' => $key,
+                ) , $enabled_filters);
+
+                $content = '<strong>' . $content . '</strong>';
+                $content.= '<a href="' . $this->return_orders_url($args_asc) . '" style="color:' . ($this->sortby_dir == 'ASC' && $this->sortby_field == $key ? '#000' : '#CCC') . ';" class="dashicons dashicons-arrow-up"></a>';
+                $content.= '<a href="' . $this->return_orders_url($args_desc) . '" style="color:' . ($this->sortby_dir == 'DESC' && $this->sortby_field == $key ? '#000' : '#CCC') . ';" class="dashicons dashicons-arrow-down"></a>';
+            }
+        }
+
+        return $columns;
+    }
+
     function content_admin_page_main() {
         global $wpdb;
-
+        $req_details = "WHERE 1=1 ";
         $enabled_filters = array(
             'status' => $this->order_statuses
         );
+
         // Enable method filter
         $enabled_filters['method'] = array();
         foreach ($this->order_methods as $k => $method) {
             $enabled_filters['method'][$k] = $method['name'];
         }
-
         $filters = $this->get_filters_page($enabled_filters);
+        $req_details.= $filters['sql'];
 
-        $req_details = "WHERE 1=1 " . $filters['sql'] . " ORDER by id DESC";
+        // Set pager
         $pager = $this->get_pager_limit(20, $this->data_table, $req_details);
+
+        // Order results
+
+        if (isset($_GET['sortby_field']) && in_array($_GET['sortby_field'], $this->sortby_fields)) {
+            $this->sortby_field = $_GET['sortby_field'];
+        }
+
+        if (isset($_GET['sortby_dir']) && in_array($_GET['sortby_dir'], $this->sortby_dirs)) {
+            $this->sortby_dir = $_GET['sortby_dir'];
+        }
+        $req_details.= ' ORDER by ' . $this->sortby_field . ' ' . $this->sortby_dir;
 
         // Get all status keys
         $list = $wpdb->get_results("SELECT id, date, name, user, amount, currency, method, status
             FROM " . $this->data_table . " " . $req_details . " " . $pager['limit']);
 
+        // Display filters
         echo $this->get_filters_html($enabled_filters, $filters['current']);
 
         if (empty($list)) {
@@ -556,18 +625,11 @@ class wpuOrders
                 $order->last_column = '<a href="' . $this->return_order_url($order->id) . '" class="button">' . $this->__('View order') . '</a>';
             }
 
+            $columns = $this->get_columns_list_html($filters['current']);
+
             // Display order list
             echo $this->get_admin_table($list, array(
-                'columns' => array(
-                    $this->__('ID') ,
-                    $this->__('Date') ,
-                    $this->__('Name') ,
-                    $this->__('User') ,
-                    $this->__('Amount') ,
-                    $this->__('Method') ,
-                    $this->__('Status') ,
-                    ''
-                ) ,
+                'columns' => $columns,
                 'pagenum' => $pager['pagenum'],
                 'max_pages' => $pager['max_pages']
             ));
