@@ -3,7 +3,7 @@
 /*
 Plugin Name: WP Utilities Orders
 Description: Allow a simple product order
-Version: 0.8
+Version: 0.8.1
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -679,14 +679,13 @@ class wpuOrders
     </tbody>
 </table>';
 
-            // details
-            if (!empty($order->details)) {
-                echo '<div><strong>' . $this->__('Details:') . '</strong> <pre style="overflow: auto;max-width:500px;padding:10px;font-size: 12px;background-color: #FFFFFF;">' . $order->details . '</pre>';
-            }
+            // Action
+            do_action('wpuorders_single_page', $order);
 
             wp_nonce_field('update-order_' . $this->options['id'], 'update-order_' . $this->options['id']);
             echo $back_button . ' <button type="submit" class="button button-primary">' . $this->__('Update order') . '</button>';
             echo '</form>';
+
         } else {
             echo '<p>' . $this->__('This order doesn’t exists') . '</p>';
             echo '<p>' . $back_button . '</p>';
